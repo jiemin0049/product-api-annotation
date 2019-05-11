@@ -5,6 +5,7 @@ import com.wiredcoffee.productapiannotation.repository.ProductRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
 import org.springframework.data.mongodb.core.ReactiveMongoOperations;
 import reactor.core.publisher.Flux;
 
@@ -15,6 +16,7 @@ public class ProductApiAnnotationApplication {
         SpringApplication.run(ProductApiAnnotationApplication.class, args);
     }
 
+    @Bean
     CommandLineRunner init(ReactiveMongoOperations operations, ProductRepository repository) {
         return args -> {
             Flux<Product> productFlux = Flux.just(
