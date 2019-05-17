@@ -4,29 +4,30 @@ import com.wiredcoffee.productapiannotation.controller.ProductController;
 import com.wiredcoffee.productapiannotation.model.Product;
 import com.wiredcoffee.productapiannotation.model.ProductEvent;
 import com.wiredcoffee.productapiannotation.repository.ProductRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.FluxExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.Assert.assertEquals;
+import static reactor.core.publisher.Mono.when;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest
-public class ProductApiAnnotationApplicationTests {
-
+@ExtendWith(SpringExtension.class)
+public class JUnit5ControllerMockTest {
     private WebTestClient client;
     private List<Product> expectedList;
 
-    @Autowired
+    @MockBean
     private ProductRepository repository;
 
     @BeforeEach
@@ -37,14 +38,18 @@ public class ProductApiAnnotationApplicationTests {
                         .configureClient()
                         .baseUrl("/products")
                         .build();
-        expectedList = repository.findAll().collectList().block();
+        expectedList = Arrays.asList(
+                new Product("1", "Big Latte", 2.99)
+        );
     }
 
     @Test
     public void testProductInvalidIdNotFound() {
+        String id = "aaa";
+        when(repository.findById(id).thenReturn(Mono.empty()));
         client
                 .get()
-                .uri("/aaa")
+                .uri("/{id}", id)
                 .exchange()
                 .expectStatus()
                 .isNotFound();
@@ -53,6 +58,7 @@ public class ProductApiAnnotationApplicationTests {
     @Test
     public void testProductIdFound() {
         Product p0 = expectedList.get(0);
+        when(repository.findById(p0.getId()).thenReturn(Mono.just(p0)));
         client
                 .get()
                 .uri("/{id}", p0.getId())
@@ -85,6 +91,7 @@ public class ProductApiAnnotationApplicationTests {
 
     @Test
     public void testGetAllProducts() {
+        when(repository.findAll()).thenReturn(Flux.fromIterable((expectedList)));
         client
                 .get()
                 .uri("/")
